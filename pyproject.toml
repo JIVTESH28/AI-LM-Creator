@@ -1,0 +1,19 @@
+[project]
+name = "lecture-material-creator"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "crewai==0.28.0",
+    "crewai-tools>=0.4.6",
+    "duckduckgo-search>=8.0.1",
+    "langchain-anthropic>=0.1.13",
+    "langchain-community>=0.0.38",
+    "langchain-openai>=0.1.7",
+    "openai>=1.78.1",
+    "phidata>=2.7.10",
+    "reportlab>=4.4.0",
+    "streamlit>=1.45.1",
+    "watchdog>=6.0.0",
+]
