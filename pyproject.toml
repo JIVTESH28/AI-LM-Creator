@@ -13,7 +13,9 @@ dependencies = [
     "langchain-openai>=0.1.7",
     "openai>=1.78.1",
     "phidata>=2.7.10",
+    "qdrant-client>=1.12.1",
     "reportlab>=4.4.0",
+    "sentence-transformers>=4.1.0",
     "streamlit>=1.45.1",
     "watchdog>=6.0.0",
 ]
