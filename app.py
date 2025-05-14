@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 from dotenv import load_dotenv
-from qdrant_storage.collections.lecture_material_creator import LectureMaterialCreator, find_topics_for_subject, create_lecture_material, create_pdf
+from lecture_content_creator import LectureMaterialCreator, find_topics_for_subject, create_lecture_material, create_pdf
 
 # Load environment variables from .env file
 load_dotenv()
