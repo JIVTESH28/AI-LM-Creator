@@ -10,7 +10,7 @@ from langchain.pydantic_v1 import BaseModel, Field
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain_core.utils.function_calling import convert_to_openai_function
 from typing import List, Dict, Optional
-import yaml
+
 import os
 import base64
 from reportlab.lib.pagesizes import letter
