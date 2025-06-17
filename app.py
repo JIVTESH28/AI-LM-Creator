@@ -1,3 +1,18 @@
+"""
+Streamlit application for the AI-Powered Lecture Material Creator.
+
+This module provides the user interface for creating lecture materials.
+Users can:
+- Specify a subject.
+- Select an AI model.
+- Discover relevant topics for the subject.
+- Generate lecture content, including images, for a chosen topic.
+- Preview the generated material.
+- Download the material as a PDF.
+
+It uses the LectureMaterialCreator class from `lecture_content_creator.py`
+to interact with AI models and generate content.
+"""
 import streamlit as st
 import os
 from dotenv import load_dotenv
@@ -7,6 +22,12 @@ from lecture_content_creator import LectureMaterialCreator, find_topics_for_subj
 load_dotenv()
 
 def main():
+    """
+    Main function to run the Streamlit application.
+
+    Sets up the page configuration, title, and handles the overall application flow,
+    including API key checks, UI layout (sidebar and tabs), and state management.
+    """
     st.set_page_config(page_title="Lecture Material Creator", page_icon="📚", layout="wide")
     
     st.title("📚 AI-Powered Lecture Material Creator")
@@ -17,8 +38,15 @@ def main():
     if not openai_api_key:
         st.error("OpenAI API key not found. Please set it as an environment variable: OPENAI_API_KEY")
         return
+
+    # Check if Tavily API key is set
+    tavily_api_key = os.getenv("TAVILY_API_KEY")
+    if not tavily_api_key:
+        st.error("Tavily API key not found. Please set it as an environment variable: TAVILY_API_KEY")
+        return
     
-    # Initialize session state
+    # Initialize session state variables if they don't exist.
+    # This helps maintain state across user interactions.
     if 'topics' not in st.session_state:
         st.session_state.topics = []
     if 'subject' not in st.session_state:
@@ -35,10 +63,17 @@ def main():
         st.header("Settings")
         model_name = st.selectbox(
             "Select AI Model",
-            ["gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"],
+            ["gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo", "claude-3-opus-20240229", "claude-3-sonnet-20240229"],
             index=0
         )
         
+        # Conditionally check for Anthropic API key if a Claude model is selected
+        if model_name.startswith("claude"):
+            anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+            if not anthropic_api_key:
+                st.error("Anthropic API key not found. Please set it as an environment variable: ANTHROPIC_API_KEY")
+                st.stop() # Stop execution if key is missing for selected model
+
         st.divider()
         st.write("### About")
         st.write("""
@@ -47,69 +82,81 @@ def main():
         relevant images to create a complete learning resource.
         """)
     
-    # Main content area with tabs
+    # Main content area with three tabs for different stages of material creation
     tab1, tab2, tab3 = st.tabs(["Create Material", "Preview Material", "Download"])
     
-    # Tab 1: Create Material
+    # Tab 1: Create Material - For subject input, topic finding, and material generation
     with tab1:
-        # Step 1: Enter subject
-        with st.container():
+        # Section for user to input the subject and find topics
+        with st.container(): # Using st.container for better layout control
             st.header("Step 1: Enter Subject")
-            subject = st.text_input("Enter the subject (e.g., Python Programming, Machine Learning)", 
-                                  value=st.session_state.subject)
+            subject = st.text_input(
+                "Enter the subject (e.g., Python Programming, Machine Learning)",
+                value=st.session_state.subject,
+                help="Provide a subject to find relevant lecture topics."
+            )
             
-            col1, col2 = st.columns([1, 5])
+            col1, col2 = st.columns([1, 5]) # Layout for button
             with col1:
                 find_topics_button = st.button("Find Topics", use_container_width=True)
             
+            # Action when 'Find Topics' button is clicked
             if find_topics_button and subject:
-                st.session_state.subject = subject
+                st.session_state.subject = subject # Store subject in session state
                 
-                with st.spinner(f"Finding topics for {subject}..."):
+                with st.spinner(f"Finding topics for {subject}..."): # Show spinner during processing
                     try:
+                        # Initialize creator and find topics
                         creator = LectureMaterialCreator(model_name=model_name)
                         topics = find_topics_for_subject(creator, subject)
-                        st.session_state.topics = topics
+                        st.session_state.topics = topics # Store topics in session state
                         st.success(f"Found {len(topics)} topics for {subject}")
                     except Exception as e:
                         st.error(f"Error finding topics: {str(e)}")
         
-        # Step 2: Select topics
-        if st.session_state.topics:
+        # Section for selecting a topic and generating lecture material
+        if st.session_state.topics: # Only show if topics are available
             with st.container():
                 st.header("Step 2: Select Topic")
                 
-                # Display topics as radio buttons
-                selected_topic = st.radio("Choose a topic for your lecture material:", 
-                                         st.session_state.topics)
+                # Radio buttons for topic selection
+                selected_topic = st.radio(
+                    "Choose a topic for your lecture material:",
+                    st.session_state.topics,
+                    help="Select one of the topics found for your subject."
+                )
                 
-                col1, col2 = st.columns([1, 5])
+                col1, col2 = st.columns([1, 5]) # Layout for button
                 with col1:
                     generate_button = st.button("Generate Material", use_container_width=True)
                 
+                # Action when 'Generate Material' button is clicked
                 if generate_button and selected_topic:
-                    st.session_state.selected_topic = selected_topic
+                    st.session_state.selected_topic = selected_topic # Store selected topic
                     
                     with st.spinner(f"Creating lecture material for {selected_topic}..."):
                         try:
+                            # Initialize creator and generate material
                             creator = LectureMaterialCreator(model_name=model_name)
-                            # Fix here: capture all three return values
                             lecture_content, image_urls, image_descriptions = create_lecture_material(creator, selected_topic)
-                            st.session_state.lecture_material = lecture_content
+                            st.session_state.lecture_material = lecture_content # Store generated content
                             
-                            # Create PDF
+                            # Create PDF version of the material
                             pdf_bytes = create_pdf(lecture_content, image_urls, image_descriptions, selected_topic)
-                            st.session_state.pdf_bytes = pdf_bytes
+                            st.session_state.pdf_bytes = pdf_bytes # Store PDF bytes
                             
                             st.success("Lecture material created successfully!")
-                            # Switch to the Preview tab
-                            tab2.active = True
+                            # Automatically switch to the Preview tab might not be directly supported by st.tabs.
+                            # User will need to click on the "Preview Material" tab.
+                            # Consider using st.experimental_set_query_params or other methods if tab switching is crucial.
+                            # For now, let's assume tab2.active = True is a placeholder for desired behavior.
+                            # tab2.active = True # This line might not work as expected with st.tabs
                         except Exception as e:
                             st.error(f"Error generating lecture material: {str(e)}")
     
-    # Tab 2: Preview Material
+    # Tab 2: Preview Material - Displays the generated lecture content
     with tab2:
-        if st.session_state.lecture_material:
+        if st.session_state.lecture_material: # Check if material is available
             st.header(f"Lecture Material: {st.session_state.selected_topic}")
             st.markdown(st.session_state.lecture_material)
         else:

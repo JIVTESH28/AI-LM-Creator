@@ -1,0 +1,14 @@
+streamlit
+python-dotenv
+langchain-openai
+langchain-anthropic
+langchain
+langchain-community
+PyYAML
+requests
+tavily-python
+langchainhub
+markdown2
+weasyprint
+pytest
+pytest-mock
